@@ -110,7 +110,7 @@ function RepoPanel({ owner, repo, onClose }) {
 
   const resolveUrl = (src) => {
     if (!src) return src;
-    if (/^https?:\///i.test(src)) return src; // already absolute
+    if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:')) return src;
     return `${rawBase}/${src.replace(/^\.?\//, '')}`;
   };
 
@@ -195,16 +195,14 @@ function RepoPanel({ owner, repo, onClose }) {
 
 /* ── Main GitHub page ────────────────────────────────────── */
 function GithubPage() {
-  const [inputValue, setInputValue] = useState('');
-  const [username, setUsername] = useState('');
+  const [profile, setProfile] = useState(null);
+  const [username] = useState('fanrado');
   const [repos, setRepos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedRepo, setSelectedRepo] = useState(null);
 
-  const handleSearch = async e => {
-    e.preventDefault();
-    const user = inputValue.trim();
+  const fetchRepos = async (user) => {
     if (!user) return;
     setLoading(true);
     setError('');
@@ -222,7 +220,6 @@ function GithubPage() {
         setError('Failed to fetch repositories.');
       } else {
         const data = await res.json();
-        setUsername(user);
         setRepos(data);
       }
     } catch {
@@ -231,26 +228,31 @@ function GithubPage() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    fetch(`https://api.github.com/users/fanrado`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => setProfile(data))
+      .catch(() => {});
+    fetchRepos('fanrado');
+  }, []);
+
   return (
     <div className="github-page">
       {/* ── Sidebar ── */}
       <aside className="github-sidebar">
-        <div className="github-search-box">
-          <h2 className="github-search-title">GitHub Repositories</h2>
-          <form onSubmit={handleSearch} className="github-form">
-            <input
-              type="text"
-              className="github-input"
-              placeholder="Enter GitHub username…"
-              value={inputValue}
-              onChange={e => setInputValue(e.target.value)}
-              autoComplete="off"
-              spellCheck="false"
-            />
-            <button type="submit" className="github-search-btn" disabled={loading}>
-              {loading ? '…' : 'Search'}
-            </button>
-          </form>
+        <div className="github-profile-box">
+          {profile ? (
+            <>
+              <img className="github-avatar" src={profile.avatar_url} alt={profile.login} />
+              <div className="github-profile-info">
+                <span className="github-profile-name">{profile.name || profile.login}</span>
+                <span className="github-profile-login">@{profile.login}</span>
+                {profile.bio && <span className="github-profile-bio">{profile.bio}</span>}
+              </div>
+            </>
+          ) : (
+            <span className="github-profile-login">@fanrado</span>
+          )}
           {error && <p className="github-error">{error}</p>}
         </div>
 
@@ -294,9 +296,9 @@ function GithubPage() {
           <div className="github-welcome">
             <div className="github-welcome-icon">🐙</div>
             <p>
-              {repos.length > 0
-                ? 'Select a repository to view its README and file structure.'
-                : 'Enter a GitHub username to browse their public repositories.'}
+              {loading
+              ? 'Loading repositories…'
+              : 'Select a repository to view its README and file structure.'}
             </p>
           </div>
         )}
