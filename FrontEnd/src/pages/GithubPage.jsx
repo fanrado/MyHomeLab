@@ -4,6 +4,38 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import './GithubPage.css';
 
+/* ── Cache helpers (localStorage, 30-min TTL) ──────────── */
+const CACHE_TTL = 30 * 60 * 1000;
+
+function cacheGet(url) {
+  try {
+    const raw = localStorage.getItem(`gh:${url}`);
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) { localStorage.removeItem(`gh:${url}`); return null; }
+    return data;
+  } catch { return null; }
+}
+
+function cacheSet(url, data) {
+  try { localStorage.setItem(`gh:${url}`, JSON.stringify({ data, ts: Date.now() })); } catch {}
+}
+
+function cacheInvalidate(url) {
+  try { localStorage.removeItem(`gh:${url}`); } catch {}
+}
+
+// Checks cache first; fetches from API and caches on miss; throws on HTTP error
+async function ghFetch(url, { asText = false } = {}) {
+  const cached = cacheGet(url);
+  if (cached !== null) return cached;
+  const res = await fetch(url);
+  if (!res.ok) { const err = new Error(res.statusText); err.status = res.status; throw err; }
+  const data = asText ? await res.text() : await res.json();
+  cacheSet(url, data);
+  return data;
+}
+
 /* ── Recursive file tree node ────────────────────────────── */
 function TreeNode({ owner, repo, item }) {
   const [children, setChildren] = useState(null);
@@ -15,20 +47,17 @@ function TreeNode({ owner, repo, item }) {
     if (!open && children === null) {
       setLoading(true);
       try {
-        const res = await fetch(
+        const data = await ghFetch(
           `https://api.github.com/repos/${owner}/${repo}/contents/${item.path}`
         );
-        if (res.ok) {
-          const data = await res.json();
-          setChildren(
-            Array.isArray(data)
-              ? [...data].sort((a, b) => {
-                  if (a.type === b.type) return a.name.localeCompare(b.name);
-                  return a.type === 'dir' ? -1 : 1;
-                })
-              : []
-          );
-        }
+        setChildren(
+          Array.isArray(data)
+            ? [...data].sort((a, b) => {
+                if (a.type === b.type) return a.name.localeCompare(b.name);
+                return a.type === 'dir' ? -1 : 1;
+              })
+            : []
+        );
       } catch {
         setChildren([]);
       }
@@ -76,22 +105,19 @@ function RepoPanel({ owner, repo, onClose }) {
     setReadmeLoading(true);
     setTreeLoading(true);
 
-    // Fetch default branch
-    fetch(`https://api.github.com/repos/${owner}/${repo.name}`)
-      .then(r => r.ok ? r.json() : null)
+    // Fetch default branch (cached)
+    ghFetch(`https://api.github.com/repos/${owner}/${repo.name}`)
       .then(data => { if (data?.default_branch) setDefaultBranch(data.default_branch); })
       .catch(() => {});
 
-    // Fetch README raw text via download_url
-    fetch(`https://api.github.com/repos/${owner}/${repo.name}/readme`)
-      .then(r => (r.ok ? r.json() : null))
-      .then(data => (data?.download_url ? fetch(data.download_url).then(r => r.text()) : null))
+    // Fetch README: API gives download_url, then fetch raw text (both cached)
+    ghFetch(`https://api.github.com/repos/${owner}/${repo.name}/readme`)
+      .then(data => data?.download_url ? ghFetch(data.download_url, { asText: true }) : null)
       .then(text => { setReadme(text); setReadmeLoading(false); })
       .catch(() => setReadmeLoading(false));
 
-    // Fetch root file tree
-    fetch(`https://api.github.com/repos/${owner}/${repo.name}/contents/`)
-      .then(r => (r.ok ? r.json() : []))
+    // Fetch root file tree (cached)
+    ghFetch(`https://api.github.com/repos/${owner}/${repo.name}/contents/`)
       .then(data => {
         const sorted = Array.isArray(data)
           ? [...data].sort((a, b) => {
@@ -209,32 +235,39 @@ function GithubPage() {
     setRepos([]);
     setSelectedRepo(null);
     try {
-      const res = await fetch(
+      const data = await ghFetch(
         `https://api.github.com/users/${user}/repos?per_page=100&sort=updated`
       );
-      if (res.status === 404) {
-        setError(`User "${user}" not found.`);
-      } else if (res.status === 403) {
-        setError('GitHub API rate limit reached. Please try again later.');
-      } else if (!res.ok) {
-        setError('Failed to fetch repositories.');
-      } else {
-        const data = await res.json();
-        setRepos(data);
-      }
-    } catch {
-      setError('Network error. Please check your connection.');
+      setRepos(data);
+    } catch (err) {
+      if (err.status === 404) setError(`User "${user}" not found.`);
+      else if (err.status === 403) setError('GitHub API rate limit reached. Please try again later.');
+      else setError('Network error. Please check your connection.');
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    fetch(`https://api.github.com/users/fanrado`)
-      .then(r => r.ok ? r.json() : null)
+    // Initial load — served from cache if available, otherwise fetches from API
+    ghFetch('https://api.github.com/users/fanrado')
       .then(data => setProfile(data))
       .catch(() => {});
     fetchRepos('fanrado');
-  }, []);
+
+    // Background refresh every 30 minutes — silently updates without resetting UI
+    const timer = setInterval(() => {
+      cacheInvalidate('https://api.github.com/users/fanrado');
+      cacheInvalidate('https://api.github.com/users/fanrado/repos?per_page=100&sort=updated');
+      ghFetch('https://api.github.com/users/fanrado')
+        .then(data => setProfile(data))
+        .catch(() => {});
+      ghFetch('https://api.github.com/users/fanrado/repos?per_page=100&sort=updated')
+        .then(data => setRepos(data))
+        .catch(() => {});
+    }, CACHE_TTL);
+
+    return () => clearInterval(timer);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="github-page">
