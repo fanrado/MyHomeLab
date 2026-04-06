@@ -13,6 +13,7 @@ build/
 node_modules/
 FrontEnd/node_modules/
 
+Backend/myhomelab.egg-info/
 # Environment variables
 .env
 .env.*
