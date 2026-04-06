@@ -5,7 +5,7 @@ import rehypeRaw from 'rehype-raw';
 import './GithubPage.css';
 
 /* ── Cache helpers (localStorage, 30-min TTL) ──────────── */
-const CACHE_TTL = 30 * 60 * 1000;
+const CACHE_TTL = 10 * 60 * 1000;
 
 function cacheGet(url) {
   try {

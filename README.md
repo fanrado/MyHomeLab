@@ -9,7 +9,7 @@ A full-stack home lab dashboard with a Python backend (FastAPI / Flask) and a Re
 - **Home page** — dark-themed card grid linking to all sections; cards animate on hover with a light-blue glow effect
 - **GitHub page** — displays the `fanrado` GitHub profile (avatar, name, bio) and all public repositories; click any repo to view its README (with full markdown rendering, images, and videos) and explore the file tree
 - **Navbar** — sticky top bar with live clock and active-link highlighting; nav links scale and glow on hover
-- **Caching** — GitHub API responses are cached in `localStorage` (30-minute TTL); data is served from cache on repeat visits and silently refreshed in the background every 30 minutes
+- **Caching** — GitHub API responses are cached in `localStorage` (10-minute TTL); data is served from cache on repeat visits and silently refreshed in the background every 10 minutes
 
 ---
 
@@ -128,8 +128,8 @@ All GitHub API calls go through a `localStorage`-backed cache:
 
 - **First visit** — data is fetched from the GitHub API and stored in `localStorage`
 - **Subsequent visits** — data is served from cache instantly (no network request)
-- **TTL** — cache entries expire after **30 minutes**; expired entries are re-fetched transparently
-- **Auto-refresh** — while the page is open, a background timer invalidates and refreshes the profile and repo list every 30 minutes
+- **TTL** — cache entries expire after **10 minutes**; expired entries are re-fetched transparently
+- **Auto-refresh** — while the page is open, a background timer invalidates and refreshes the profile and repo list every 10 minutes
 
 > GitHub's unauthenticated API limit is **60 requests/hour** per IP. The cache keeps usage well within that limit during normal browsing.
 
