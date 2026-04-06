@@ -1,6 +1,6 @@
 # MyHomeLab
 
-A full-stack home lab project with a Python backend (FastAPI / Flask) and a React frontend.
+A full-stack home lab dashboard with a Python backend (FastAPI / Flask) and a React frontend.
 
 ---
 
@@ -31,7 +31,7 @@ source myhomelab_env/bin/activate   # Windows: myhomelab_env\Scripts\activate
 ### 3. Install all dependencies (Python + Node.js + React) via pip
 
 ```bash
-# Install Python packages (FastAPI, Flask) and nodeenv
+# Install Python packages (FastAPI, Flask, nodeenv)
 pip install -e .
 
 # Embed Node.js into the active Python virtual environment
@@ -41,7 +41,7 @@ nodeenv --python-virtualenv
 npm install --prefix FrontEnd
 ```
 
-After this, `node`, `npm`, and all Python tools are all available within the same activated virtualenv.
+After this, `node`, `npm`, and all Python tools are available within the same activated virtualenv.
 
 To also install development dependencies (pytest, httpx):
 
@@ -53,24 +53,36 @@ pip install -e ".[dev]"
 
 ## Running the Project
 
+### Frontend (quick start)
+
+A convenience script handles activation and startup automatically:
+
+```bash
+./run_frontend.sh
+```
+
+The React dev server will be available at `http://localhost:3000`.
+
+### Frontend (manual)
+
+```bash
+source myhomelab_env/bin/activate
+npm start --prefix FrontEnd
+```
+
 ### Backend
 
 ```bash
-# FastAPI (from workspace root, venv active)
+source myhomelab_env/bin/activate
+
+# FastAPI
 uvicorn BackEnd.main:app --reload
 
 # or Flask
 flask --app BackEnd/app.py run --debug
 ```
 
-### Frontend
-
-```bash
-cd FrontEnd
-npm start
-```
-
-The React dev server runs on `http://localhost:3000` and the FastAPI server on `http://localhost:8000` by default.
+The FastAPI server runs on `http://localhost:8000` by default.
 
 ---
 
@@ -78,9 +90,19 @@ The React dev server runs on `http://localhost:3000` and the FastAPI server on `
 
 ```
 MyHomeLab/
-├── BackEnd/          # Python backend (FastAPI / Flask)
-├── FrontEnd/         # React frontend
-│   └── package.json
-├── pyproject.toml    # Python project & dependency definition
+├── BackEnd/                    # Python backend (FastAPI / Flask)
+├── FrontEnd/                   # React frontend
+│   ├── public/
+│   │   └── index.html          # HTML shell
+│   ├── src/
+│   │   ├── index.js            # React root mount
+│   │   ├── App.js              # Homepage component
+│   │   ├── App.css             # Dark theme styles
+│   │   └── components/
+│   │       └── Navbar.jsx      # Top navigation bar
+│   └── package.json            # Node.js dependencies
+├── myhomelab_env/              # Python virtualenv (not committed)
+├── pyproject.toml              # Python project & dependency definition
+├── run_frontend.sh             # Convenience script to start the frontend
 └── README.md
 ```
