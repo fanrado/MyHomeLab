@@ -13,8 +13,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Activate the Python virtual environment (includes nodeenv Node.js)
 source "$SCRIPT_DIR/myhomelab_env/bin/activate"
 
-# Install npm dependencies if react-scripts is missing
-if [ ! -f "$SCRIPT_DIR/FrontEnd/node_modules/.bin/react-scripts" ]; then
+# Install npm dependencies if vite is missing
+if [ ! -f "$SCRIPT_DIR/FrontEnd/node_modules/.bin/vite" ]; then
   echo "Dependencies not found — running npm install..."
   npm install --legacy-peer-deps --prefix "$SCRIPT_DIR/FrontEnd"
 fi

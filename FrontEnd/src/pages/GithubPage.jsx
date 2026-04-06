@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import './GithubPage.css';
 
 /* ── Recursive file tree node ────────────────────────────── */
@@ -65,12 +68,19 @@ function RepoPanel({ owner, repo, onClose }) {
   const [tree, setTree] = useState(null);
   const [treeLoading, setTreeLoading] = useState(true);
   const [tab, setTab] = useState('readme');
+  const [defaultBranch, setDefaultBranch] = useState('main');
 
   useEffect(() => {
     setReadme(null);
     setTree(null);
     setReadmeLoading(true);
     setTreeLoading(true);
+
+    // Fetch default branch
+    fetch(`https://api.github.com/repos/${owner}/${repo.name}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.default_branch) setDefaultBranch(data.default_branch); })
+      .catch(() => {});
 
     // Fetch README raw text via download_url
     fetch(`https://api.github.com/repos/${owner}/${repo.name}/readme`)
@@ -94,6 +104,34 @@ function RepoPanel({ owner, repo, onClose }) {
       })
       .catch(() => { setTree([]); setTreeLoading(false); });
   }, [owner, repo.name]);
+
+  // Resolve relative URLs to raw.githubusercontent.com
+  const rawBase = `https://raw.githubusercontent.com/${owner}/${repo.name}/${defaultBranch}`;
+
+  const resolveUrl = (src) => {
+    if (!src) return src;
+    if (/^https?:\///i.test(src)) return src; // already absolute
+    return `${rawBase}/${src.replace(/^\.?\//, '')}`;
+  };
+
+  const mdComponents = {
+    img: ({ src, alt, ...props }) => (
+      <img src={resolveUrl(src)} alt={alt} {...props} style={{ maxWidth: '100%', borderRadius: '6px' }} />
+    ),
+    video: ({ src, children, ...props }) => (
+      <video
+        src={resolveUrl(src)}
+        controls
+        style={{ maxWidth: '100%', borderRadius: '6px' }}
+        {...props}
+      >
+        {children}
+      </video>
+    ),
+    source: ({ src, ...props }) => (
+      <source src={resolveUrl(src)} {...props} />
+    ),
+  };
 
   return (
     <div className="repo-panel">
@@ -134,7 +172,7 @@ function RepoPanel({ owner, repo, onClose }) {
           readmeLoading
             ? <div className="panel-loading">Loading README…</div>
             : readme
-              ? <pre className="readme-pre">{readme}</pre>
+              ? <ReactMarkdown className="readme-md" remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={mdComponents}>{readme}</ReactMarkdown>
               : <p className="panel-empty">No README found for this repository.</p>
         )}
         {tab === 'files' && (
