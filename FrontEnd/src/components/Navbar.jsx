@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link, NavLink } from 'react-router-dom';
 
 function Navbar() {
   const [now, setNow] = useState(new Date());
@@ -17,7 +18,7 @@ function Navbar() {
 
   return (
     <nav className="navbar">
-      <a href="/" className="navbar-brand">MyHomeLab</a>
+      <Link to="/" className="navbar-brand">MyHomeLab</Link>
 
       <div className="navbar-clock">
         <span className="navbar-clock-date">{dateStr}</span>
@@ -25,10 +26,11 @@ function Navbar() {
       </div>
 
       <ul className="navbar-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/services">Services</a></li>
-        <li><a href="/network">Network</a></li>
-        <li><a href="/monitoring">Monitoring</a></li>
+        <li><NavLink to="/" end>Home</NavLink></li>
+        <li><NavLink to="/overview">Overview</NavLink></li>
+        <li><NavLink to="/github">Github</NavLink></li>
+        <li><NavLink to="/apps-hardware">Apps/Hardware</NavLink></li>
+        <li><NavLink to="/dashboard">Dashboard</NavLink></li>
       </ul>
     </nav>
   );

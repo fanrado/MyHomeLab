@@ -10,6 +10,7 @@ build/
 *.egg
 
 # Node
+node_modules/
 FrontEnd/node_modules/
 
 # Environment variables
