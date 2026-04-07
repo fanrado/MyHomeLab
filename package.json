@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "myhomelab-frontend": "file:FrontEnd"
+  }
+}
