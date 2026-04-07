@@ -288,4 +288,48 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ── Imported-file chip ────────────────────────────────────────────────────── */
+.todo-import-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #2a2a3d;
+  border: 1px solid #45475a;
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  color: #cdd6f4;
+  max-width: 200px;
+}
+
+.todo-import-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.todo-import-chip-remove {
+  flex-shrink: 0;
+  background: #45475a;
+  border: none;
+  border-radius: 4px;
+  color: #cdd6f4;
+  width: 1.4rem;
+  height: 1.4rem;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.todo-import-chip-remove:hover {
+  background: #f38ba8;
+  color: #1e1e2e;
 }

@@ -8,9 +8,11 @@ export default function TodoApp({ onClose }) {
   const [input, setInput]         = useState('');
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
-  const [editingId, setEditingId] = useState(null);
-  const [editText, setEditText]   = useState('');
-  const fileInputRef              = useRef(null);
+  const [editingId, setEditingId]     = useState(null);
+  const [editText, setEditText]       = useState('');
+  const [importedFile, setImportedFile] = useState(null);
+  const [importedIds, setImportedIds]   = useState([]);
+  const fileInputRef                  = useRef(null);
 
   useEffect(() => { fetchTodos(); }, []);
 
@@ -115,11 +117,26 @@ export default function TodoApp({ onClose }) {
         body: formData,
       });
       if (!res.ok) throw new Error('Failed to import CSV');
+      const { ids } = await res.json();
+      setImportedFile(file.name);
+      setImportedIds(ids);
       await fetchTodos();
     } catch (e) {
       setError(e.message);
     }
     e.target.value = '';
+  }
+
+  async function dismissImport() {
+    // Delete every imported todo from the server in parallel.
+    await Promise.all(
+      importedIds.map(id =>
+        fetch(`${API_BASE}/api/todos/${id}`, { method: 'DELETE' }).catch(() => {})
+      )
+    );
+    setTodos(prev => prev.filter(t => !importedIds.includes(t.id)));
+    setImportedIds([]);
+    setImportedFile(null);
   }
 
   const remaining = todos.filter(t => !t.completed).length;
@@ -232,9 +249,23 @@ export default function TodoApp({ onClose }) {
                 <button className="todo-btn todo-btn--action" onClick={exportCSV}>
                   ⬇️ Export CSV
                 </button>
-                <button className="todo-btn todo-btn--action" onClick={() => fileInputRef.current.click()}>
-                  ⬆️ Import CSV
-                </button>
+                {importedFile ? (
+                  <div className="todo-import-chip">
+                    <span className="todo-import-chip-name" title={importedFile}>📄 {importedFile}</span>
+                    <button
+                      className="todo-import-chip-remove"
+                      onClick={dismissImport}
+                      aria-label="Remove imported file"
+                      title="Remove"
+                    >
+                      −
+                    </button>
+                  </div>
+                ) : (
+                  <button className="todo-btn todo-btn--action" onClick={() => fileInputRef.current.click()}>
+                    ⬆️ Import CSV
+                  </button>
+                )}
                 <input
                   ref={fileInputRef}
                   type="file"
