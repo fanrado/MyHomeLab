@@ -239,6 +239,9 @@ function GithubPage() {
         `https://api.github.com/users/${user}/repos?per_page=100&sort=updated`
       );
       setRepos(data);
+      // Auto-open the "fanrado" repo on first load
+      const defaultRepo = data.find(r => r.name === 'fanrado');
+      if (defaultRepo) setSelectedRepo(defaultRepo);
     } catch (err) {
       if (err.status === 404) setError(`User "${user}" not found.`);
       else if (err.status === 403) setError('GitHub API rate limit reached. Please try again later.');
