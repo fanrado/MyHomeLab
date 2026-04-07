@@ -116,21 +116,23 @@ def import_todos():
     try:
         content = file.stream.read().decode("utf-8")
         reader = csv.DictReader(io.StringIO(content))
-        todos = []
+        new_todos = []
         for row in reader:
-            row_id = row.get("id", "").strip()
             row_title = row.get("title", "").strip()
             # Skip rows missing required fields to prevent CSV injection
-            if not row_id or not row_title:
+            if not row_title:
                 continue
-            todos.append({
-                "id": row_id,
+            new_todos.append({
+                # Always assign a fresh ID so imported rows never collide
+                # with existing todos or other imports.
+                "id": str(uuid.uuid4()),
                 "title": row_title,
                 "completed": row.get("completed", "false").lower() == "true",
                 "created_at": row.get("created_at", datetime.now(timezone.utc).isoformat()),
             })
-        _write_todos(todos)
-        return jsonify({"imported": len(todos)})
+        existing = _read_todos()
+        _write_todos(existing + new_todos)
+        return jsonify({"imported": len(new_todos), "ids": [t["id"] for t in new_todos]})
     except Exception as exc:
         return jsonify({"error": str(exc)}), 400
 
