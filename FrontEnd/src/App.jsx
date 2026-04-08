@@ -19,7 +19,7 @@ function App() {
           </Routes>
         </div>
         <footer className="footer">
-          <p>&copy; {new Date().getFullYear()} MyHomeLab</p>
+          <p>&copy; {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()} MyHomeLab</p>
         </footer>
       </div>
     </BrowserRouter>
