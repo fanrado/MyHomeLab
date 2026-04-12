@@ -27,9 +27,9 @@ function Navbar() {
 
       <ul className="navbar-links">
         <li><NavLink to="/" end>Home</NavLink></li>
-        <li><NavLink to="/overview">Overview</NavLink></li>
         <li><NavLink to="/github">Github</NavLink></li>
-        <li><NavLink to="/apps-hardware">Apps/Hardware</NavLink></li>
+        <li><NavLink to="/apps">Apps</NavLink></li>
+        <li><NavLink to="/hardware">Hardware</NavLink></li>
         <li><NavLink to="/dashboard">Dashboard</NavLink></li>
       </ul>
     </nav>
